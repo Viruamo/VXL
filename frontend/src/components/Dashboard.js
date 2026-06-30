@@ -25,7 +25,6 @@ const Dashboard = ({ onViewDetail, realTimeData }) => {
       }
       const res = await fetchMeasurements(params);
       setData(res.data);
-      // Giả định server trả về total trong header hoặc có thể thêm API count
       setPagination(prev => ({ ...prev, current: page }));
     } catch (err) {
       notification.error({ message: 'Lỗi tải dữ liệu' });
@@ -38,10 +37,9 @@ const Dashboard = ({ onViewDetail, realTimeData }) => {
     loadData();
   }, [loadData]);
 
-  // Real-time: thêm bản ghi mới vào đầu bảng
   useEffect(() => {
     if (realTimeData) {
-      setData(prev => [realTimeData, ...prev.slice(0, 49)]); // giữ 50 dòng
+      setData(prev => [realTimeData, ...prev.slice(0, 49)]);
     }
   }, [realTimeData]);
 
@@ -50,15 +48,20 @@ const Dashboard = ({ onViewDetail, realTimeData }) => {
   }, []);
 
   const columns = [
-    { title: 'Thời gian', dataIndex: 'ts', key: 'ts', render: text => moment(text).format('HH:mm:ss DD/MM/YY') },
-    { title: 'Nhiệt độ', dataIndex: 'temperature', key: 'temp', render: v => v?.toFixed(1) + ' °C' },
-    { title: 'Độ ẩm', dataIndex: 'humidity', key: 'hum', render: v => v?.toFixed(1) + ' %' },
-    { title: 'Gas', dataIndex: 'gas_values', key: 'gas', render: arr => arr ? `${arr.length} kênh` : '-' },
-    {
-      title: 'Hành động',
-      render: (_, record) => <Button type="link" onClick={() => onViewDetail(record.id)}>Chi tiết</Button>
-    }
-  ];
+  {
+    title: 'Thời gian', dataIndex: 'ts', key: 'ts',
+    render: text => moment(text).format('HH:mm:ss DD/MM/YY'),
+    sorter: (a, b) => moment(a.ts).unix() - moment(b.ts).unix(),
+    defaultSortOrder: 'descend',
+  },
+  { title: 'Nhiệt độ', dataIndex: 'temperature', key: 'temp', render: v => v?.toFixed(1) + ' °C' },
+  { title: 'Độ ẩm', dataIndex: 'humidity', key: 'hum', render: v => v?.toFixed(1) + ' %' },
+  { title: 'Gas (cal)', dataIndex: 'gas_values', key: 'gas_cal', render: arr => arr?.[0]?.toFixed(1) || '-' },
+  { title: 'Raw Temp', dataIndex: 'raw_temperature', key: 'raw_temp', render: v => v?.toFixed(1) + ' °C' },
+  { title: 'Raw Hum', dataIndex: 'raw_humidity', key: 'raw_hum', render: v => v?.toFixed(1) + ' %' },
+  { title: 'Raw Gas', dataIndex: 'raw_gas', key: 'raw_gas', render: v => v?.toFixed(1) || '-' },
+  { title: 'Hành động', render: (_, record) => <Button type="link" onClick={() => onViewDetail(record.id)}>Chi tiết</Button> },
+];
 
   return (
     <div>
@@ -73,7 +76,7 @@ const Dashboard = ({ onViewDetail, realTimeData }) => {
         <RangePicker
           showTime={{ format: 'HH:mm' }}
           format="YYYY-MM-DD HH:mm"
-          onChange={(dates, dateStrings) => {
+          onChange={(dates) => {
             if (dates) setDateRange([dates[0].toDate(), dates[1].toDate()]);
             else setDateRange([]);
           }}

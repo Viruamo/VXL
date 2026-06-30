@@ -1,13 +1,14 @@
-FROM node:18-alpine
-
+# Giai đoạn 1: Build React app
+FROM node:18-alpine AS build
 WORKDIR /app
-
-# BẮT BUỘC: Phải copy cả package.json và package-lock.json vào trước
 COPY package*.json ./
-
-# Sau đó mới chạy npm ci
-RUN npm ci --only=production
-
+RUN npm install
 COPY . .
+RUN npm run build
 
-CMD ["node", "server.js"] # hoặc lệnh khởi chạy của bạn
+# Giai đoạn 2: Chạy Nginx
+FROM nginx:alpine
+COPY --from=build /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
